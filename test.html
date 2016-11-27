@@ -1,0 +1,249 @@
+<html>
+  <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" type="text/javascript" charset="utf-8" ></script>
+   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+   <script src="https://code.highcharts.com/highcharts.js"></script>
+   <script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script   src="https://code.jquery.com/jquery-2.2.4.min.js"   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="   crossorigin="anonymous"></script>
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/7.1.0/css/bootstrap-slider.css" >
+           <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/7.1.0/bootstrap-slider.js"></script>
+
+<script type="text/javascript" src="/jquery.min.js"></script>
+<script src="/highcharts.js"></script>
+<link rel="stylesheet" type="text/css" href="/bootstrap.min.css">
+
+<script type="text/javascript" src="/bootstrap.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/bootstrap-theme.min.css">
+<script type="text/javascript" src="/loader.js"></script>
+<link rel="stylesheet" type="text/css" href="/bootstrap-slider.css">
+<script src="/bootstrap-slider.js"></script>
+<script src="/exporting.js"></script>
+
+
+   <script type="text/javascript">
+
+
+      // PARA EL SLIDER
+
+      $(document).ready(function(){
+
+         $('#ex1').slider({
+                    value : 0,
+                    formatter: function(value) {
+                        return 'IC-OUT: ' + value;
+                    }
+                });
+      });
+
+
+
+
+      google.charts.load('current', {'packages':['gauge']});
+      google.charts.setOnLoadCallback(drawChart);
+      function drawChart() {
+
+        var data = google.visualization.arrayToDataTable([
+          ['Label', 'Value'],
+          ['IC-REF mA', 0],
+          ['IC-OUT mA', 0],
+        //  ['GAIN-APROX', 0]
+        ]);
+
+        var options = {
+          min: 1.74, max: 2.66,
+          width: 1000, height: 220,
+          redFrom: 2.4, redTo: 2.66,
+          yellowFrom:2.2, yellowTo: 2.4,
+          minorTicks: 0
+        };
+
+        var chart = new google.visualization.Gauge(document.getElementById('chart_div'));
+
+        chart.draw(data, options);
+        localStorage.setItem("fecha","0");
+        setInterval(function() {
+          $.ajax({
+                  method: "POST",
+                        url: "http://localhost:8000/alimento",//ME DICE LA ID DE LOS AMIGOS DEL USUARIO ID = IDE
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
+                        data: $.param({}),
+                        success: function (msg) {
+                            largo = msg.length;
+                            for(var i  = largo-1; i <=largo-1 ; i++){
+                            console.log(msg[i].fecha);
+                            console.log(String(localStorage.getItem("fecha")));
+                            console.log(String(localStorage.getItem("fecha"))==String(msg[i].fecha));
+                            if(!(String(localStorage.getItem("fecha"))==String(msg[i].fecha))){
+                              console.log("Estoy agregando datos");
+                              localStorage.setItem("fecha",msg[i].fecha);
+                              localStorage.setItem("IC",msg[i].ic);
+                              localStorage.setItem("IC-REF",msg[i].iref);
+                              localStorage.setItem("IC-OUT",msg[i].iref * 11);
+                              localStorage.setItem("GAIN-APROX",'0');
+                              document.getElementById('ex1').value = msg[i].ic;
+                            }else{
+                              console.log("NAH TODOS IGUALES JAJAJ :(");
+                            }
+
+
+                            }
+                      }
+                  });
+
+        }, 20000);
+
+        $("#ex1").on("input change", function() {
+            localStorage.setItem("IC-OUT",document.getElementById('ex1').value);
+            localStorage.setItem("IC-REF",(document.getElementById('ex1').value/11));
+             $.ajax({
+                  method: "POST",
+                        url: "http://localhost:8000/recargarArduino",//ME DICE LA ID DE LOS AMIGOS DEL USUARIO ID = IDE
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
+                        data: $.param({ic:String(document.getElementById('ex1').value)}),
+                        success: function (msg) {
+
+                        }
+                  });
+        });
+
+
+
+        setInterval(function() {
+          data.setValue(0, 1, localStorage.getItem("IC-REF"));
+          chart.draw(data, options);
+        }, 1000);
+        setInterval(function() {
+          data.setValue(1, 1, localStorage.getItem("IC-OUT"));
+          chart.draw(data, options);
+        
+        }, 1000);
+        /*
+        setInterval(function() {
+          data.setValue(2, 1, localStorage.getItem("GAIN-APROX"));
+          chart.draw(data, options);
+        }, 1000);
+      
+      */}
+
+
+      $(function () {
+    $(document).ready(function () {
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+
+        Highcharts.chart('container', {
+            chart: {
+                type: 'spline',
+                animation: Highcharts.svg, // don't animate in old IE
+                marginRight: 10,
+                 width: 400,
+                 height: 400,
+                events: {
+                    load: function () {
+
+                        // set up the updating of the chart each second
+                        var series = this.series[0];
+                        setInterval(function () {
+                            var x = (new Date()).getTime(), // current time
+                                y = parseFloat(localStorage.getItem("IC-OUT"));
+                            series.addPoint([x, y], true, true);
+                        }, 1000);
+                    }
+                }
+            },
+            title: {
+                text: 'Corriente de colector en tiempo real'
+            },
+            xAxis: {
+                type: 'datetime',
+                tickPixelInterval: 150
+            },
+            yAxis: {
+                title: {
+                    text: 'Value'
+                },
+                plotLines: [{
+                    value: 0,
+                    width: 1,
+                    color: '#808080'
+                }]
+            },
+            tooltip: {
+                formatter: function () {
+                    return '<b>' + this.series.name + '</b><br/>' +
+                        Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
+                        Highcharts.numberFormat(this.y, 2);
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            exporting: {
+                enabled: false
+            },
+            series: [{
+                name: 'Random data',
+                data: (function () {
+                    // generate an array of random data
+                    var data = [],
+                        time = (new Date()).getTime(),
+                        i;
+
+                    for (i = -19; i <= 0; i += 1) {
+                        data.push({
+                            x: time + i * 1000,
+                            y: Math.random()
+                        });
+                    }
+                    return data;
+                }())
+            }]
+        });
+    });
+});
+    </script>
+  </head>
+  <body style ="background-color: gray">
+  <h3>MEDICION EN TIEMPO REAL DE UN AMPLIFICADOR OPERACIONAL EN FUNCIONAMIENTO</h1>
+  <h4 style ="color:blue">Hecho por : </h4>
+  <ul>
+    <li>
+      <h5 style ="color:white">Miguel Califa :)</h5>
+    </li>
+    <li>
+      <h5 style ="color:white ">Dúmar Hidalgo</h5>
+    </li>
+  </ul>
+  <div id="slider" style="margin:20px 0px 20px 10px">
+<input  id="ex1" data-slider-id='ex1Slider' type="text" data-slider-min="1.64" data-slider-max="2.6" data-slider-step="0.05" data-slider-value="14"/>
+
+  </div>
+    <div id="chart_div" style="width: 400px;height: 120px;margin-left: 395px;"></div>
+    <div class="grafico" style="margin-top: 100px;text-align: center;margin-left: 414px;text-align: center;">
+       <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    </div>
+
+
+
+<style type="text/css" media="screen">
+  #ex1Slider .slider-selection {
+  background: #BABABA;
+  /* text-align: center; */
+    margin-left: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+
+}
+
+
+</style>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </body>
+</html>
